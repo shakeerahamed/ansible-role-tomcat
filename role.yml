@@ -1,0 +1,6 @@
+---
+ - name: play for tomcat
+   hosts: all
+   become: yes
+   roles: 
+    - tomcat

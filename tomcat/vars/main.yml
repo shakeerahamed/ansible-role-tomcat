@@ -1,0 +1,5 @@
+---
+# vars file for tomcat
+http_port: 18081
+user_name: tomcat
+password: admin

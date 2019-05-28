@@ -1,0 +1,98 @@
+---
+# tasks file for tomcat
+
+ - name: Install OpenJdk 1.8 
+   yum:
+    name: "{{ item }}" 
+    state: present
+   with_items:
+    - java-1.8.0-openjdk-devel.x86_64
+    - java-1.8.0-openjdk-src.x86_64
+ 
+ - name: Adding tomcat group 
+   group:
+    name: tomcat
+    state: present
+ 
+ - name: Creating tomcat user with default home directory /opt/home
+   user:
+    name: tomcat
+    group: tomcat
+    shell: /bin/nologin
+    home: /opt/tomcat
+    createhome: no
+ 
+ - name: Make tomcat directory in /opt
+   file:
+    path: /opt/tomcat
+    state: directory
+ 
+ - name: copy the tomcat 8 binary to the nodes
+   copy:
+    src: /opt/apache-tomcat-8.5.41.tar.gz
+    dest: /tmp
+
+ - name: Unarchive the tomcat 8 binary file from node
+   unarchive:
+    src: /tmp/apache-tomcat-8.5.41.tar.gz
+    dest: /opt/tomcat/
+    remote_src: yes
+    extra_opts:
+     - --strip-components=1
+ 
+ - name: Giving tomcat group ownership for entire directory
+   file: 
+    path: /opt/tomcat
+    state: directory
+    group: tomcat
+    recurse: yes 
+ 
+ - name: Giving tomcat group read access to the conf directory and all of its content execute permission
+   file:
+    path: /opt/tomcat/conf
+    state: directory
+    recurse: yes
+    mode: g=r
+ 
+ - file:
+    path: /opt/tomcat/conf
+    state: directory
+    mode: g=x
+
+ - name: Make tomcat user the owner of the following directory
+   file:
+    path: /opt/tomcat/{{ item }}
+    owner: tomcat
+    recurse: yes
+   with_items:
+    - webapps
+    - work
+    - logs
+    - temp
+    
+ - name: Copy the tomcat.service file from controller to /etc/systemd/system/
+   copy:
+    src: tomcat.service
+    dest: /etc/systemd/system 
+
+ - name: changing port 8080 to required number.
+   template:
+    src: server.xml
+    dest: /opt/tomcat/conf/server.xml
+   notify:
+    - restart tomcat
+ 
+ - name: Adding User and Password with manager-gui role
+   template:
+    src: tomcat-users.xml
+    dest: /opt/tomcat/conf/tomcat-users.xml
+   notify:
+    - restart tomcat
+ 
+ - name: Uncomment line in context.xml
+   template:
+    src: context.xml
+    dest: /opt/tomcat/webapps/manager/META-INF/context.xml
+   notify:
+    - restart tomcat 
+
